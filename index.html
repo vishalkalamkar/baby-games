@@ -115,6 +115,35 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 @keyframes rise{to{transform:translate(var(--drift),calc(-1 * var(--h)))}}
 @keyframes burst{to{transform:scale(1.6);opacity:0}}
 
+/* balloon blast */
+.group{font-size:clamp(20px,5vw,26px);font-weight:800;margin:4px 0 10px;line-height:1.2}
+.tiles.blast{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:22px}
+.tiles.blast .tile{border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:8px 4px;gap:4px}
+.tiles.blast .tile:active{box-shadow:0 1px 0 var(--ink);transform:translateY(5px)}
+.tiles.blast .ic{font-size:clamp(30px,9vw,54px)}
+.tiles.blast .lb{font-size:clamp(14px,3.8vw,22px);padding:1px 10px 0}
+.ic.glyph{font-weight:800;color:var(--paper);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;letter-spacing:.02em;white-space:nowrap}
+.stage.blastStage{justify-content:flex-start;gap:10px;overflow:hidden;padding-top:0}
+.blasthost{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;width:100%}
+.chips{display:flex;gap:8px;overflow-x:auto;width:100%;padding:4px 2px 8px;flex:none;box-sizing:border-box;scrollbar-width:thin}
+.chip{flex:none;min-width:48px;height:48px;padding:5px 10px 0;border-radius:14px;border:3px solid var(--ink);background:var(--paper);font-weight:800;font-size:24px;line-height:1;box-shadow:0 3px 0 var(--ink)}
+.chip.done{background:var(--leaf);color:var(--paper)}
+.chip.now{background:var(--sun);color:var(--ink)}
+.modes{display:flex;gap:8px;width:100%;flex:none;flex-wrap:wrap}
+.mode{font-weight:800;font-size:20px;padding:6px 16px 2px;border-radius:999px;border:3px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink)}
+.mode[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.skyfield{position:relative;width:100%;flex:1;min-height:240px;border-radius:26px;border:3px solid var(--ink);background:linear-gradient(#FDE7C8,#A7DDF7 55%,#6FB9EE);overflow:hidden;box-shadow:0 6px 0 var(--ink);box-sizing:border-box}
+.bb{position:absolute;bottom:-200px;background:none;border:0;padding:0;width:var(--w);animation:rise var(--dur) linear forwards;touch-action:none}
+.bb .skin{display:block;position:relative}
+.bb svg{display:block;width:100%;height:auto}
+.bb .glyph{position:absolute;left:0;right:0;top:15%;text-align:center;font-weight:800;font-size:calc(var(--w) * .4);line-height:1.2;color:var(--paper);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;white-space:nowrap}
+.bb.popped{animation-play-state:paused;pointer-events:none}
+.bb.popped .skin{animation:burst .22s forwards}
+.reveal{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:var(--paper);border:3px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--ink);padding:10px 28px 8px;text-align:center;animation:popin .35s;z-index:2;pointer-events:none;max-width:86%;box-sizing:border-box}
+.reveal .big{font-size:clamp(72px,20vw,124px);font-weight:800;line-height:1.05}
+.reveal .word{font-size:clamp(22px,6vw,34px);font-weight:800;line-height:1.25;overflow-wrap:anywhere}
+@keyframes popin{from{transform:translate(-50%,-50%) scale(.4);opacity:0}}
+
 #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:10}
 @media (prefers-reduced-motion:reduce){
   .balloon{animation:none}
@@ -137,6 +166,9 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
   <main>
     <section class="home" id="home">
       <h1 class="hello" id="hello">Let's play!</h1>
+      <h2 class="group" id="blastHead">Balloon Blast</h2>
+      <div class="tiles blast" id="blastTiles"></div>
+      <h2 class="group" id="moreHead">More games</h2>
       <div class="tiles" id="tiles"></div>
       <p class="grownups" id="grownups"></p>
     </section>
@@ -173,6 +205,8 @@ const UI = {
   hello:{en:"Let's play!", mr:'चला खेळूया!'},
   colors:{en:'Colors', mr:'रंग'}, shapes:{en:'Shapes', mr:'आकार'}, count:{en:'Count', mr:'मोजा'},
   animals:{en:'Animals', mr:'प्राणी'}, bubbles:{en:'Bubbles', mr:'बुडबुडे'}, pairs:{en:'Pairs', mr:'जोड्या'},
+  abc:{en:'Letters', mr:'इंग्रजी'}, nums:{en:'Numbers', mr:'अंक'}, barakhadi:{en:'Barakhadi', mr:'बाराखडी'},
+  blastHead:{en:'Balloon Blast', mr:'फुगे फोडा'}, moreHead:{en:'More games', mr:'आणखी खेळ'},
   again:{en:'Try again!', mr:'पुन्हा बघ!'},
   animalsPrompt:{en:'Tap an animal!', mr:'प्राण्याला हात लाव!'},
   bubblesPrompt:{en:'Pop the bubbles!', mr:'बुडबुडे फोडा!'},
@@ -228,22 +262,23 @@ const ANIMALS = [
 let voices = [];
 function loadVoices(){ try{ voices = speechSynthesis.getVoices() || []; }catch(e){ voices = []; } }
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-function findVoice(){
-  const prefs = lang==='mr' ? ['mr','hi'] : ['en-in','en-gb','en-us','en'];
+function findVoice(L){
+  const prefs = L==='mr' ? ['mr','hi'] : ['en-in','en-gb','en-us','en'];
   for (const p of prefs){
     const v = voices.find(v => v.lang && v.lang.toLowerCase().replace('_','-').startsWith(p));
     if (v) return v;
   }
   return null;
 }
-function say(text){
+function say(text, forceLang){
   if (!('speechSynthesis' in window) || !text) return;
+  const L = forceLang || lang;
   try{
     speechSynthesis.cancel();
-    const v = findVoice();
-    if (lang==='mr' && !v && voices.length) return; // no Indian voice: words stay on screen
+    const v = findVoice(L);
+    if (L==='mr' && !v && voices.length) return; // no Indian voice: words stay on screen
     const u = new SpeechSynthesisUtterance(text);
-    if (v){ u.voice = v; u.lang = v.lang; } else { u.lang = lang==='mr' ? 'mr-IN' : 'en-IN'; }
+    if (v){ u.voice = v; u.lang = v.lang; } else { u.lang = L==='mr' ? 'mr-IN' : 'en-IN'; }
     u.rate = 0.88; u.pitch = 1.15;
     speechSynthesis.speak(u);
   }catch(e){}
@@ -304,7 +339,8 @@ function stopGame(){
   if (cleanup) cleanup(); cleanup = null;
   try{ speechSynthesis.cancel(); }catch(e){}
 }
-function setPrompt(text, speak=true){ lastPrompt = text; $('#promptText').textContent = text; if (speak) say(text); }
+let lastPromptLang = null;
+function setPrompt(text, speak=true, L){ lastPrompt = text; lastPromptLang = L || null; $('#promptText').textContent = text; if (speak) say(text, L); }
 function addStar(){ stars++; store.set('stars', stars); $('#starCount').textContent = fmtNum(stars); }
 function win(words, el){ addStar(); sfx.chime(); confetti(el); say(words + ' ' + pick(PRAISE[lang])); }
 function miss(el, words){
@@ -495,11 +531,163 @@ function pairsGame(stage){
   round();
 }
 
+/* ---------- balloon blast ---------- */
+const ABC_WORDS = {A:['Apple','🍎'],B:['Ball','⚽'],C:['Cat','🐱'],D:['Dog','🐶'],E:['Elephant','🐘'],F:['Fish','🐟'],G:['Grapes','🍇'],H:['House','🏠'],I:['Ice cream','🍦'],J:['Juice','🧃'],K:['Kite','🪁'],L:['Lion','🦁'],M:['Monkey','🐵'],N:['Nose','👃'],O:['Orange','🍊'],P:['Parrot','🦜'],Q:['Queen','👸'],R:['Rabbit','🐰'],S:['Sun','☀️'],T:['Tiger','🐯'],U:['Umbrella','☂️'],V:['Van','🚐'],W:['Watch','⌚'],X:['Xylophone','🎶'],Y:['Yo-yo','🪀'],Z:['Zebra','🦓']};
+const SWAR = ['अ','आ','इ','ई','उ','ऊ','ऋ','ए','ऐ','ओ','औ','अं','अः'];
+const VYANJAN = ['क','ख','ग','घ','ङ','च','छ','ज','झ','ञ','ट','ठ','ड','ढ','ण','त','थ','द','ध','न','प','फ','ब','भ','म','य','र','ल','व','श','ष','स','ह','ळ','क्ष','ज्ञ'];
+const MATRA = ['','ा','ि','ी','ु','ू','े','ै','ो','ौ','ं','ः'];
+const MRW = {'अ':['अननस','🍍'],'आ':['आंबा','🥭'],'इ':['इमारत','🏢'],'ई':['ईडलिंबू','🍋'],'उ':['उंदीर','🐭'],'ऊ':['ऊन','☀️'],'ऋ':['ऋषी',''],'ए':['एडका','🐏'],'ओ':['ओठ','👄'],'औ':['औषध','💊'],'अं':['अंगठी','💍'],
+  'क':['कमळ','🪷'],'ख':['खार','🐿️'],'ग':['गाय','🐄'],'घ':['घर','🏠'],'च':['चमचा','🥄'],'छ':['छत्री','☂️'],'ज':['जहाज','🚢'],'झ':['झाड','🌳'],'ट':['टरबूज','🍉'],'ठ':['ठसा',''],'ड':['डमरू','🥁'],'ढ':['ढग','☁️'],'ण':['बाण','🏹'],'त':['तारा','⭐'],'थ':['थेंब','💧'],'द':['दात','🦷'],'ध':['धनुष्य','🏹'],'न':['नळ','🚰'],'प':['पतंग','🪁'],'फ':['फूल','🌸'],'ब':['बदक','🦆'],'भ':['भोपळा','🎃'],'म':['मासा','🐟'],'य':['यंत्र','⚙️'],'र':['रथ',''],'ल':['लिंबू','🍋'],'व':['वाघ','🐯'],'श':['शहाळे','🥥'],'ष':['षटकोन',''],'स':['ससा','🐰'],'ह':['हत्ती','🐘'],'ळ':['कमळ','🪷'],'क्ष':['क्षितिज','🌅'],'ज्ञ':['ज्ञान','📚']};
+
+/* Runs one balloon-blast round set inside `host`. Returns a stop function. */
+function blastEngine(host, items, opts){
+  let alive = true, idx = 0, busy = false, lastLanes = [];
+  const done = new Set();
+  host.innerHTML = '<div class="chips" role="group"></div><div class="skyfield"></div>';
+  const chips = host.querySelector('.chips'), sky = host.querySelector('.skyfield');
+  items.forEach((it,i) => {
+    const c = btn('chip', it.show, it.show);
+    c.onclick = () => { if (busy) return; idx = i; setTarget(); };
+    chips.appendChild(c);
+  });
+  const setH = () => sky.style.setProperty('--h', (sky.clientHeight + 420) + 'px');
+  setH(); window.addEventListener('resize', setH);
+
+  function setTarget(){
+    const it = items[idx];
+    [...chips.children].forEach((c,i) => { c.classList.toggle('now', i===idx); c.classList.toggle('done', done.has(i) && i!==idx); });
+    const chip = chips.children[idx];
+    chips.scrollTo({left: chip.offsetLeft - chips.clientWidth/2 + chip.offsetWidth/2, behavior: reduceMotion ? 'auto' : 'smooth'});
+    setPrompt(opts.prompt(it), true, opts.promptLang);
+    makeBalloon(it);
+  }
+  function makeBalloon(it){
+    if (!alive) return;
+    const W = sky.clientWidth || 300;
+    const w = Math.round(Math.min(130, Math.max(80, W * .22)));
+    const lanes = Math.max(1, Math.floor(W / w));
+    let lane, tries = 0;
+    do { lane = Math.floor(Math.random()*lanes); } while (lastLanes.includes(lane) && ++tries < 8);
+    lastLanes = [lane, ...lastLanes].slice(0, Math.min(2, lanes-1));
+    const b = document.createElement('button');
+    b.className = 'bb'; b._it = it; b.setAttribute('aria-label', it.show);
+    b.innerHTML = `<span class="skin">${balloonSVG(pick(COLORS).hex)}<span class="glyph">${it.show}</span></span>`;
+    b.style.setProperty('--w', w+'px');
+    b.style.left = (lane * (W - w) / Math.max(1, lanes-1) || 0) + 'px';
+    b.style.setProperty('--dur', (7.5 + Math.random()*3)+'s');
+    b.style.setProperty('--drift', (Math.random()*40-20)+'px');
+    b.addEventListener('pointerdown', popIt);
+    b.addEventListener('animationend', e => { if (e.animationName==='rise') b.remove(); });
+    sky.appendChild(b);
+  }
+  function spawn(){
+    if (!alive) return;
+    const live = [...sky.querySelectorAll('.bb:not(.popped)')];
+    if (live.length < 6){
+      const target = items[idx];
+      const hasTarget = live.some(b => b._it === target);
+      let it = target;
+      if (hasTarget && Math.random() > .3){
+        const near = items.filter((x,i) => x !== target && Math.abs(i-idx) <= 6);
+        it = pick(near.length ? near : items.filter(x => x !== target));
+      }
+      makeBalloon(it);
+    }
+    later(spawn, 1100);
+  }
+  function popIt(e){
+    e.preventDefault();
+    const b = e.currentTarget; if (b.classList.contains('popped')) return;
+    b.classList.add('popped'); sfx.pop(); setTimeout(() => b.remove(), 260);
+    const it = b._it;
+    if (it === items[idx] && !busy){
+      busy = true; done.add(idx); addStar(); sfx.chime(); confetti(b);
+      const r = document.createElement('div'); r.className = 'reveal';
+      r.innerHTML = `<div class="big">${it.big || it.show}</div>` + (it.word ? `<div class="word">${it.word}</div>` : '');
+      sky.appendChild(r);
+      say(it.full || it.say, it.lang);
+      later(() => {
+        if (!alive) return;
+        r.remove();
+        idx = (idx + 1) % items.length;
+        if (idx === 0) done.clear();
+        busy = false; setTarget();
+      }, 2600);
+    } else {
+      say(it.say, it.lang);
+    }
+  }
+  setTarget(); later(spawn, 900);
+  return () => { alive = false; window.removeEventListener('resize', setH); };
+}
+
+function abcGame(stage){
+  stage.classList.add('blastStage');
+  const items = Object.keys(ABC_WORDS).map(l => {
+    const [w, e] = ABC_WORDS[l];
+    return {show:l, big:`${l}<span style="font-size:.6em"> ${l.toLowerCase()}</span>`, say:l, lang:'en', word:`${e} ${w}`, full:`${l}. ${l} for ${w}!`};
+  });
+  cleanup = blastEngine(stage, items, {prompt: it => lang==='en' ? `Pop the letter ${it.show}!` : `${it.show} फुगा फोडा!`});
+}
+
+function numsGame(stage){
+  stage.classList.add('blastStage');
+  const items = [];
+  for (let n=1; n<=20; n++) items.push({show:fmtNum(n), say:numWord(n), word: n<=10 ? '⭐'.repeat(n) : numWord(n), full:`${numWord(n)}! ${pick(PRAISE[lang])}`});
+  cleanup = blastEngine(stage, items, {prompt: it => lang==='en' ? `Pop number ${it.show}!` : `${it.show} चा फुगा फोडा!`});
+}
+
+let mrMode = 'swar', mrCons = 'क';
+function barakhadiGame(stage){
+  stage.classList.add('blastStage');
+  stage.innerHTML = '<div class="modes" role="group"></div><div class="chips cons" role="group" hidden></div><div class="blasthost"></div>';
+  const modes = stage.querySelector('.modes'), consRow = stage.querySelector('.cons'), host = stage.querySelector('.blasthost');
+  let stopEngine = null;
+  cleanup = () => { if (stopEngine) stopEngine(); };
+  const MODES = [['swar','स्वर'],['vyanjan','व्यंजन'],['barakhadi','बाराखडी']];
+  MODES.forEach(([k,label]) => {
+    const b = btn('mode', label); b.dataset.k = k;
+    b.onclick = () => { mrMode = k; start(); };
+    modes.appendChild(b);
+  });
+  VYANJAN.forEach(c => {
+    const b = btn('chip', c, c); b.dataset.c = c;
+    b.onclick = () => { mrCons = c; start(); };
+    consRow.appendChild(b);
+  });
+  const letterItem = x => {
+    const [w, e] = MRW[x] || ['',''];
+    return {show:x, say:x, lang:'mr', word: w ? `${e} ${w}`.trim() : '', full: w ? `${x}, ${w}` : x};
+  };
+  function start(){
+    if (stopEngine) stopEngine();
+    [...modes.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.k === mrMode));
+    consRow.hidden = mrMode !== 'barakhadi';
+    let items;
+    if (mrMode === 'swar') items = SWAR.map(letterItem);
+    else if (mrMode === 'vyanjan') items = VYANJAN.map(letterItem);
+    else {
+      [...consRow.children].forEach(b => b.classList.toggle('now', b.dataset.c === mrCons));
+      const sel = [...consRow.children].find(b => b.dataset.c === mrCons);
+      if (sel) consRow.scrollTo({left: sel.offsetLeft - consRow.clientWidth/2 + sel.offsetWidth/2});
+      items = MATRA.map((m, i) => {
+        const form = mrCons + m;
+        return {show:form, say:form, lang:'mr', word: `${mrCons} + ${m ? '◌'+m : SWAR[0]} = ${form}`, full: form};
+      });
+    }
+    stopEngine = blastEngine(host, items, {prompt: it => `${it.show} चा फुगा फोडा!`, promptLang:'mr'});
+  }
+  start();
+}
+
 /* ---------- menu ---------- */
 const GAMES = [
+  {id:'abc', group:'blast', c:'var(--sky)', icon:()=>'<span class="ic glyph">ABC</span>', run:abcGame},
+  {id:'nums', group:'blast', c:'var(--orange)', icon:()=>`<span class="ic glyph">${fmtNum(123)}</span>`, run:numsGame},
+  {id:'barakhadi', group:'blast', c:'var(--grape)', icon:()=>'<span class="ic glyph">अ आ</span>', run:barakhadiGame},
   {id:'colors', c:'var(--tomato)', icon:()=>'<span class="ic">🎈</span>', run:colorsGame},
   {id:'shapes', c:'var(--sun)', icon:()=>'<span class="ic"><svg viewBox="0 0 120 50"><circle cx="20" cy="27" r="17" fill="#EF533D" stroke="#1F2B45" stroke-width="3.5"/><polygon points="60,8 80,44 40,44" fill="#3597E6" stroke="#1F2B45" stroke-width="3.5" stroke-linejoin="round"/><rect x="86" y="11" width="31" height="31" rx="3" fill="#2FAE64" stroke="#1F2B45" stroke-width="3.5"/></svg></span>', run:shapesGame},
-  {id:'count', c:'var(--leaf)', icon:()=>`<span class="ic num">${fmtNum(123)}</span>`, run:countGame},
+  {id:'count', c:'var(--leaf)', icon:()=>'<span class="ic">🧮</span>', run:countGame},
   {id:'animals', c:'var(--orange)', icon:()=>'<span class="ic">🐮</span>', run:animalsGame},
   {id:'bubbles', c:'var(--sky)', icon:()=>'<span class="ic"><svg viewBox="0 0 80 60"><circle cx="28" cy="34" r="22" fill="rgba(255,255,255,.55)" stroke="#1F2B45" stroke-width="3"/><circle cx="62" cy="18" r="14" fill="rgba(255,255,255,.55)" stroke="#1F2B45" stroke-width="3"/><circle cx="20" cy="26" r="5" fill="#fff"/><circle cx="57" cy="13" r="3.5" fill="#fff"/></svg></span>', run:bubblesGame},
   {id:'pairs', c:'var(--pink)', icon:()=>'<span class="ic duo">🐱🐱</span>', run:pairsGame}
@@ -508,12 +696,14 @@ const GAMES = [
 function renderHome(){
   $('#hello').textContent = T(UI.hello);
   $('#grownups').innerHTML = T(UI.grownups);
-  const tiles = $('#tiles'); tiles.innerHTML = '';
+  $('#blastHead').textContent = T(UI.blastHead);
+  $('#moreHead').textContent = T(UI.moreHead);
+  const tiles = $('#tiles'), blast = $('#blastTiles'); tiles.innerHTML = ''; blast.innerHTML = '';
   GAMES.forEach(g => {
     const b = btn('tile', g.icon() + `<span class="lb">${T(UI[g.id])}</span>`, T(UI[g.id]));
     b.style.setProperty('--c', g.c);
     b.onclick = () => openGame(g.id);
-    tiles.appendChild(b);
+    (g.group === 'blast' ? blast : tiles).appendChild(b);
   });
 }
 function openGame(id){
@@ -522,7 +712,7 @@ function openGame(id){
   const g = GAMES.find(g => g.id===id);
   $('#home').hidden = true; $('#game').hidden = false; $('#homeBtn').hidden = false;
   $('#brand').textContent = T(UI[id]);
-  const stage = $('#stage'); stage.innerHTML = '';
+  const stage = $('#stage'); stage.innerHTML = ''; stage.className = 'stage';
   g.run(stage);
 }
 function goHome(){
@@ -542,7 +732,7 @@ function setLang(l){
 }
 
 $('#homeBtn').onclick = goHome;
-$('#hearBtn').onclick = () => say($('#promptText').textContent || lastPrompt);
+$('#hearBtn').onclick = () => say(lastPrompt || $('#promptText').textContent, lastPromptLang);
 $('#langEn').onclick = () => setLang('en');
 $('#langMr').onclick = () => setLang('mr');
 window.addEventListener('resize', () => { if (raf) sizeCanvas(); });
