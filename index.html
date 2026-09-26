@@ -1,0 +1,554 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#CFEBDD"></head><body>
+<title>Tiny Toybox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
+<style>
+:root{
+  --ground:#CFEBDD; --paper:#FFFDF8; --ink:#1F2B45;
+  --tomato:#EF533D; --sun:#FFC234; --leaf:#2FAE64; --sky:#3597E6;
+  --grape:#8757EE; --pink:#F266AC; --orange:#FF8628;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{
+  margin:0; background-color:var(--ground); color:var(--ink);
+  background-image:radial-gradient(circle at 2px 2px, rgba(31,43,69,.08) 2px, transparent 0);
+  background-size:28px 28px;
+  font-family:'Baloo 2','Nirmala UI','Mangal',system-ui,sans-serif;
+  -webkit-user-select:none; user-select:none; touch-action:manipulation;
+  overflow:hidden; -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:4px solid var(--sky);outline-offset:3px}
+.app{height:100%;display:flex;flex-direction:column;max-width:900px;margin:0 auto;padding-inline:16px;box-sizing:border-box}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:10px;padding-block:12px}
+.iconbtn{width:52px;height:52px;flex:none;border-radius:16px;border:3px solid var(--ink);background:var(--paper);box-shadow:0 4px 0 var(--ink);display:grid;place-items:center;padding:0}
+.iconbtn svg{width:28px;height:28px}
+.iconbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.brand{flex:1;min-width:0;font-weight:800;font-size:clamp(22px,6vw,30px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stars{display:flex;align-items:center;gap:4px;font-weight:800;font-size:20px;background:var(--sun);border:3px solid var(--ink);border-radius:999px;padding:3px 12px 1px 8px;box-shadow:0 3px 0 var(--ink);font-variant-numeric:tabular-nums}
+.stars svg{width:22px;height:22px;margin-top:-2px}
+.lang{display:flex;flex:none;border:3px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:0 3px 0 var(--ink)}
+.lang button{font-weight:700;font-size:16px;padding:6px 10px 3px;border:0;background:var(--paper)}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* home */
+.home{overflow:auto;padding-bottom:24px}
+.hello{font-size:clamp(32px,8vw,52px);font-weight:800;margin:0 0 14px;line-height:1.05;text-wrap:balance}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (min-width:640px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{border:3px solid var(--ink);border-radius:26px;background:var(--c);box-shadow:0 8px 0 var(--ink);padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;aspect-ratio:1/1;max-width:100%;min-width:0}
+.tile:active{transform:translateY(6px);box-shadow:0 2px 0 var(--ink)}
+.tile .ic{font-size:clamp(46px,13vw,76px);line-height:1.1;display:flex;align-items:center;justify-content:center;height:1.2em}
+.tile .ic svg{height:1em;width:auto}
+.tile .ic.num{font-weight:800;letter-spacing:.02em;color:var(--paper);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill}
+.tile .ic.duo{font-size:clamp(34px,10vw,56px)}
+.tile .lb{font-size:clamp(20px,5vw,28px);font-weight:800;background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:2px 16px 0;line-height:1.3}
+.grownups{margin:22px 0 0;font-size:15px;line-height:1.5;max-width:60ch;opacity:.8}
+.grownups b{font-weight:700}
+
+/* game */
+.game{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;padding-bottom:16px}
+.prompt{display:flex;align-items:center;gap:12px;background:var(--paper);border:3px solid var(--ink);border-radius:22px;padding:8px 8px 8px 18px;box-shadow:0 5px 0 var(--ink)}
+.prompt p{margin:0;flex:1;font-size:clamp(24px,6.5vw,40px);font-weight:800;line-height:1.15;padding-top:4px;text-wrap:balance}
+.prompt .iconbtn{background:var(--sun)}
+.stage{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:22px;overflow:auto;padding-block:8px}
+
+.row{display:flex;gap:clamp(10px,4vw,32px);justify-content:center;width:100%}
+.choice{background:none;border:0;padding:0;flex:1;max-width:190px;min-width:0}
+.choice svg{width:100%;height:auto;display:block}
+.balloon svg{filter:drop-shadow(0 8px 0 rgba(31,43,69,.18))}
+.balloon{animation:bob 2.6s ease-in-out infinite}
+.balloon.fly{animation:fly 1.3s ease-in forwards}
+.shapecard{background:var(--paper);border:3px solid var(--ink);border-radius:24px;box-shadow:0 6px 0 var(--ink);padding:clamp(10px,3vw,20px)}
+.shapecard.good{background:var(--sun);animation:hop .5s}
+
+.tray{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 16px;background:var(--paper);border:3px dashed var(--ink);border-radius:26px;padding:18px 12px;width:100%;max-width:560px;box-sizing:border-box}
+.item{font-size:clamp(50px,13vw,78px);background:none;border:0;position:relative;line-height:1.1;padding:4px}
+.item.counted{animation:hop .35s}
+.item.counted::after{content:attr(data-c);position:absolute;top:-4px;right:-8px;background:var(--sky);color:var(--paper);border:3px solid var(--ink);border-radius:50%;width:36px;height:36px;font-size:21px;font-weight:800;display:grid;place-items:center;line-height:1;padding-top:3px;box-sizing:border-box}
+.nums{gap:clamp(12px,4vw,28px)}
+.num{font-weight:800;font-size:clamp(46px,12vw,74px);width:clamp(86px,24vw,130px);aspect-ratio:1;border-radius:24px;border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink);line-height:1;padding-top:.12em;background:var(--sun)}
+.num:nth-child(2){background:var(--pink)}
+.num:nth-child(3){background:var(--leaf)}
+.num.good{animation:hop .5s;background:var(--paper)}
+
+.zoo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;max-width:560px}
+.animal{background:var(--paper);border:3px solid var(--ink);border-radius:22px;box-shadow:0 5px 0 var(--ink);padding:6px 4px 2px;display:flex;flex-direction:column;align-items:center}
+.animal .e{font-size:clamp(42px,11vw,66px);line-height:1.15}
+.animal .n{font-size:clamp(17px,4vw,23px);font-weight:700}
+.animal.hop{animation:hop .5s;background:var(--sun)}
+.bubblesay{min-height:1.2em;font-size:clamp(26px,7vw,40px);font-weight:800;text-align:center;line-height:1.2}
+
+.pond{position:relative;width:100%;flex:1;min-height:260px;border-radius:26px;border:3px solid var(--ink);background:linear-gradient(#A7DDF7,#3597E6);overflow:hidden;box-shadow:0 6px 0 var(--ink)}
+.popcount{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:clamp(100px,30vw,200px);font-weight:800;color:rgba(255,255,255,.5);pointer-events:none;line-height:1;font-variant-numeric:tabular-nums}
+.bubble{position:absolute;bottom:-140px;background:none;border:0;padding:0;animation:rise var(--dur) linear forwards;touch-action:none}
+.bubble .skin{display:block;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.95) 0 9%,rgba(255,255,255,.2) 12% 45%,var(--tint) 78%,rgba(255,255,255,.75) 100%);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)}
+.bubble.popped{animation-play-state:paused;pointer-events:none}
+.bubble.popped .skin{animation:burst .25s forwards}
+
+.board{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:12px;width:100%;max-width:min(520px,62vh)}
+.card{aspect-ratio:3/4;background:none;border:0;padding:0;perspective:700px}
+.card .inner{position:relative;display:block;width:100%;height:100%;transition:transform .4s;transform-style:preserve-3d}
+.card.up .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:18px;border:3px solid var(--ink);backface-visibility:hidden;-webkit-backface-visibility:hidden;display:grid;place-items:center;box-shadow:0 5px 0 var(--ink)}
+.back{background-color:var(--grape);background-image:radial-gradient(circle,rgba(255,255,255,.35) 4px,transparent 5px);background-size:22px 22px}
+.front{background:var(--paper);transform:rotateY(180deg);font-size:clamp(38px,10vw,64px)}
+.card.matched .front{background:var(--sun)}
+.card.matched{animation:hop .5s}
+
+.again{font-weight:800;font-size:26px;padding:8px 26px 4px;border-radius:999px;border:3px solid var(--ink);background:var(--leaf);box-shadow:0 5px 0 var(--ink)}
+
+.shake{animation:shake .45s !important}
+@keyframes bob{50%{transform:translateY(-12px) rotate(2deg)}}
+@keyframes fly{to{transform:translateY(-120vh) rotate(-8deg)}}
+@keyframes hop{30%{transform:translateY(-14px) scale(1.08)}60%{transform:translateY(0) scale(.96)}}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+@keyframes rise{to{transform:translate(var(--drift),calc(-1 * var(--h)))}}
+@keyframes burst{to{transform:scale(1.6);opacity:0}}
+
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:10}
+@media (prefers-reduced-motion:reduce){
+  .balloon{animation:none}
+  .card .inner{transition:none}
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <button class="iconbtn" id="homeBtn" hidden aria-label="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1F2B45" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>
+    </button>
+    <div class="brand" id="brand">Toybox</div>
+    <div class="stars" aria-label="Stars earned"><svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="#FFFDF8" stroke="#1F2B45" stroke-width="2" stroke-linejoin="round"/></svg><span id="starCount">0</span></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="langEn" aria-pressed="true">EN</button>
+      <button id="langMr" aria-pressed="false">मराठी</button>
+    </div>
+  </header>
+  <main>
+    <section class="home" id="home">
+      <h1 class="hello" id="hello">Let's play!</h1>
+      <div class="tiles" id="tiles"></div>
+      <p class="grownups" id="grownups"></p>
+    </section>
+    <section class="game" id="game" hidden>
+      <div class="prompt">
+        <p id="promptText"></p>
+        <button class="iconbtn" id="hearBtn" aria-label="Hear it again">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1F2B45" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="#FFFDF8"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+        </button>
+      </div>
+      <div class="stage" id="stage"></div>
+    </section>
+  </main>
+</div>
+<canvas id="confetti"></canvas>
+
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem('toybox_'+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem('toybox_'+k, JSON.stringify(v)); }catch(e){} }
+};
+let lang = store.get('lang','en') === 'mr' ? 'mr' : 'en';
+let stars = Number(store.get('stars',0)) || 0;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const T = o => o[lang];
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- words ---------- */
+const UI = {
+  appName:{en:'Toybox', mr:'खेळघर'},
+  hello:{en:"Let's play!", mr:'चला खेळूया!'},
+  colors:{en:'Colors', mr:'रंग'}, shapes:{en:'Shapes', mr:'आकार'}, count:{en:'Count', mr:'मोजा'},
+  animals:{en:'Animals', mr:'प्राणी'}, bubbles:{en:'Bubbles', mr:'बुडबुडे'}, pairs:{en:'Pairs', mr:'जोड्या'},
+  again:{en:'Try again!', mr:'पुन्हा बघ!'},
+  animalsPrompt:{en:'Tap an animal!', mr:'प्राण्याला हात लाव!'},
+  bubblesPrompt:{en:'Pop the bubbles!', mr:'बुडबुडे फोडा!'},
+  pairsPrompt:{en:'Find the pairs!', mr:'जोड्या शोधा!'},
+  pairsDone:{en:'You found them all!', mr:'सगळ्या जोड्या सापडल्या!'},
+  grownups:{
+    en:'<b>For grown-ups:</b> turn the sound on. The voice comes from your device. If it has no Marathi or Hindi voice, the words still show at the top of each game so you can read them aloud.',
+    mr:'<b>मोठ्यांसाठी:</b> आवाज चालू ठेवा. बोलणारा आवाज तुमच्या फोन/कॉम्प्युटरचा आहे. त्यात मराठी किंवा हिंदी आवाज नसेल तर शब्द वरती दिसतील, ते तुम्ही वाचून दाखवा.'
+  }
+};
+const PRAISE = {en:['Great job!','Well done!','Yay!','Super!','You did it!'], mr:['शाब्बास!','छान!','खूप छान!','वा! मस्त!','हुशार बाळ!']};
+const NUMW = {
+  en:['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'],
+  mr:['शून्य','एक','दोन','तीन','चार','पाच','सहा','सात','आठ','नऊ','दहा','अकरा','बारा','तेरा','चौदा','पंधरा','सोळा','सतरा','अठरा','एकोणीस','वीस']
+};
+const numWord = n => NUMW[lang][n] || String(n);
+const fmtNum = n => lang==='mr' ? String(n).replace(/\d/g, d => '०१२३४५६७८९'[d]) : String(n);
+
+const COLORS = [
+  {hex:'#EF533D', en:'red', mr:'लाल'},
+  {hex:'#3597E6', en:'blue', mr:'निळा'},
+  {hex:'#FFC234', en:'yellow', mr:'पिवळा'},
+  {hex:'#2FAE64', en:'green', mr:'हिरवा'},
+  {hex:'#FF8628', en:'orange', mr:'नारिंगी'},
+  {hex:'#8757EE', en:'purple', mr:'जांभळा'},
+  {hex:'#F266AC', en:'pink', mr:'गुलाबी'}
+];
+const SHAPES = [
+  {k:'circle', en:'circle', mr:'वर्तुळ'},
+  {k:'square', en:'square', mr:'चौरस'},
+  {k:'triangle', en:'triangle', mr:'त्रिकोण'},
+  {k:'star', en:'star', mr:'तारा'},
+  {k:'heart', en:'heart', mr:'बदाम'}
+];
+const ITEMS = [
+  {e:'🍎', en:'apples', mr:'सफरचंद'}, {e:'🍌', en:'bananas', mr:'केळी'}, {e:'⚽', en:'balls', mr:'चेंडू'},
+  {e:'🐟', en:'fish', mr:'मासे'}, {e:'🚗', en:'cars', mr:'गाड्या'}, {e:'🦆', en:'ducks', mr:'बदके'},
+  {e:'⭐', en:'stars', mr:'चांदण्या'}, {e:'🥭', en:'mangoes', mr:'आंबे'}
+];
+const ANIMALS = [
+  {e:'🐮', name:{en:'Cow', mr:'गाय'}, sound:{en:'Moo!', mr:'हंबा!'}},
+  {e:'🐶', name:{en:'Dog', mr:'कुत्रा'}, sound:{en:'Woof woof!', mr:'भो भो!'}},
+  {e:'🐱', name:{en:'Cat', mr:'मांजर'}, sound:{en:'Meow!', mr:'म्याऊ म्याऊ!'}},
+  {e:'🦁', name:{en:'Lion', mr:'सिंह'}, sound:{en:'Roar!', mr:'गर्र्र!'}},
+  {e:'🦆', name:{en:'Duck', mr:'बदक'}, sound:{en:'Quack quack!', mr:'क्वॅक क्वॅक!'}},
+  {e:'🐑', name:{en:'Sheep', mr:'मेंढी'}, sound:{en:'Baa baa!', mr:'बें बें!'}},
+  {e:'🐓', name:{en:'Rooster', mr:'कोंबडा'}, sound:{en:'Cock-a-doodle-doo!', mr:'कुकूच कू!'}},
+  {e:'🐸', name:{en:'Frog', mr:'बेडूक'}, sound:{en:'Ribbit!', mr:'डराव डराव!'}},
+  {e:'🐵', name:{en:'Monkey', mr:'माकड'}, sound:{en:'Ooh ooh aah aah!', mr:'हुप हुप!'}}
+];
+
+/* ---------- speech ---------- */
+let voices = [];
+function loadVoices(){ try{ voices = speechSynthesis.getVoices() || []; }catch(e){ voices = []; } }
+if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function findVoice(){
+  const prefs = lang==='mr' ? ['mr','hi'] : ['en-in','en-gb','en-us','en'];
+  for (const p of prefs){
+    const v = voices.find(v => v.lang && v.lang.toLowerCase().replace('_','-').startsWith(p));
+    if (v) return v;
+  }
+  return null;
+}
+function say(text){
+  if (!('speechSynthesis' in window) || !text) return;
+  try{
+    speechSynthesis.cancel();
+    const v = findVoice();
+    if (lang==='mr' && !v && voices.length) return; // no Indian voice: words stay on screen
+    const u = new SpeechSynthesisUtterance(text);
+    if (v){ u.voice = v; u.lang = v.lang; } else { u.lang = lang==='mr' ? 'mr-IN' : 'en-IN'; }
+    u.rate = 0.88; u.pitch = 1.15;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---------- sounds ---------- */
+let ac = null;
+function actx(){
+  if (!ac){ try{ ac = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (ac.state==='suspended') ac.resume();
+  return ac;
+}
+function note(freq, start, dur, type='sine', vol=.16, endFreq){
+  const a = actx(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime + start;
+  o.type = type; o.frequency.setValueAtTime(freq, t0);
+  if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t0+dur);
+  g.gain.setValueAtTime(.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0+.015);
+  g.gain.exponentialRampToValueAtTime(.0001, t0+dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0+dur+.05);
+}
+const sfx = {
+  chime(){ note(523,0,.3,'triangle'); note(659,.1,.3,'triangle'); note(784,.2,.5,'triangle'); note(1047,.32,.6,'triangle',.1); },
+  boop(){ note(260,0,.22,'sine',.14,200); note(200,.14,.3,'sine',.12,150); },
+  pop(){ note(900,0,.12,'sine',.22,180); },
+  tick(n){ note(380+n*70,0,.14,'triangle',.14); },
+  flip(){ note(640,0,.07,'square',.04); },
+  ding(){ note(880,0,.2,'triangle',.12); note(1175,.08,.3,'triangle',.1); }
+};
+
+/* ---------- confetti ---------- */
+const cv = $('#confetti'), cx = cv.getContext('2d');
+let parts = [], raf = null;
+const CONF = ['#EF533D','#FFC234','#2FAE64','#3597E6','#8757EE','#F266AC','#FF8628'];
+function sizeCanvas(){ const d = window.devicePixelRatio||1; cv.width = innerWidth*d; cv.height = innerHeight*d; cx.setTransform(d,0,0,d,0,0); }
+function confetti(el){
+  if (reduceMotion) return;
+  sizeCanvas();
+  const r = el ? el.getBoundingClientRect() : {left:innerWidth/2,top:innerHeight/2,width:0,height:0};
+  const x = r.left + r.width/2, y = r.top + r.height/2;
+  for (let i=0;i<90;i++) parts.push({x, y, vx:(Math.random()-.5)*14, vy:-Math.random()*13-3, s:7+Math.random()*7, c:pick(CONF), r:Math.random()*6, vr:(Math.random()-.5)*.35, life:110});
+  if (!raf) loop();
+}
+function loop(){
+  cx.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p => { p.vy += .38; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life--;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.66); cx.restore(); });
+  parts = parts.filter(p => p.life>0 && p.y < innerHeight+30);
+  raf = parts.length ? requestAnimationFrame(loop) : (cx.clearRect(0,0,innerWidth,innerHeight), null);
+}
+
+/* ---------- shared game helpers ---------- */
+let timers = [], cleanup = null, current = null, lastPrompt = '';
+const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+function stopGame(){
+  timers.forEach(clearTimeout); timers = [];
+  if (cleanup) cleanup(); cleanup = null;
+  try{ speechSynthesis.cancel(); }catch(e){}
+}
+function setPrompt(text, speak=true){ lastPrompt = text; $('#promptText').textContent = text; if (speak) say(text); }
+function addStar(){ stars++; store.set('stars', stars); $('#starCount').textContent = fmtNum(stars); }
+function win(words, el){ addStar(); sfx.chime(); confetti(el); say(words + ' ' + pick(PRAISE[lang])); }
+function miss(el, words){
+  sfx.boop();
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  el.addEventListener('animationend', () => el.classList.remove('shake'), {once:true});
+  say((words||'') + T(UI.again));
+}
+function btn(cls, html, label){ const b = document.createElement('button'); b.className = cls; b.innerHTML = html; if (label) b.setAttribute('aria-label', label); return b; }
+
+/* ---------- drawings ---------- */
+function balloonSVG(hex){
+  return `<svg viewBox="0 0 100 150" aria-hidden="true">
+    <path d="M50 104 C54 118 44 128 52 148" fill="none" stroke="#1F2B45" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M44 106 L56 106 L50 97 Z" fill="${hex}" stroke="#1F2B45" stroke-width="3" stroke-linejoin="round"/>
+    <ellipse cx="50" cy="52" rx="40" ry="47" fill="${hex}" stroke="#1F2B45" stroke-width="3.5"/>
+    <ellipse cx="35" cy="34" rx="8" ry="13" fill="#fff" opacity=".45" transform="rotate(24 35 34)"/>
+  </svg>`;
+}
+function starPoints(cx,cy,R,r){ let p=[]; for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rad=i%2?r:R; p.push((cx+rad*Math.cos(a)).toFixed(1)+','+(cy+rad*Math.sin(a)).toFixed(1)); } return p.join(' '); }
+function shapeSVG(k, hex){
+  const s = `fill="${hex}" stroke="#1F2B45" stroke-width="4" stroke-linejoin="round"`;
+  const body = {
+    circle:`<circle cx="50" cy="50" r="42" ${s}/>`,
+    square:`<rect x="11" y="11" width="78" height="78" rx="6" ${s}/>`,
+    triangle:`<polygon points="50,9 93,89 7,89" ${s}/>`,
+    star:`<polygon points="${starPoints(50,53,46,19)}" ${s}/>`,
+    heart:`<path d="M50 90 C22 70 6 54 6 33 C6 18 17 8 30 8 C39 8 46 13 50 21 C54 13 61 8 70 8 C83 8 94 18 94 33 C94 54 78 70 50 90Z" ${s}/>`
+  }[k];
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`;
+}
+
+/* ---------- games ---------- */
+function colorsGame(stage){
+  function round(){
+    let busy = false;
+    const opts = shuffle(COLORS).slice(0,3), target = pick(opts);
+    setPrompt(lang==='en' ? `Where is ${target.en}?` : `${target.mr} कुठे आहे?`);
+    stage.innerHTML = '<div class="row"></div>';
+    const row = stage.firstChild;
+    opts.forEach((c,i) => {
+      const b = btn('choice balloon', balloonSVG(c.hex), T(c));
+      b.style.animationDelay = (-i*0.8)+'s';
+      b.onclick = () => {
+        if (busy) return;
+        if (c === target){ busy = true; b.classList.add('fly'); win(T(c)+'!', b); later(round, 2000); }
+        else miss(b, lang==='en' ? `That is ${c.en}. ` : `हा ${c.mr} रंग. `);
+      };
+      row.appendChild(b);
+    });
+  }
+  round();
+}
+
+function shapesGame(stage){
+  function round(){
+    let busy = false;
+    const opts = shuffle(SHAPES).slice(0,3), target = pick(opts), color = pick(COLORS).hex;
+    setPrompt(lang==='en' ? `Where is the ${target.en}?` : `${target.mr} कुठे आहे?`);
+    stage.innerHTML = '<div class="row"></div>';
+    const row = stage.firstChild;
+    opts.forEach(s => {
+      const b = btn('choice shapecard', shapeSVG(s.k, color), T(s));
+      b.onclick = () => {
+        if (busy) return;
+        if (s === target){ busy = true; b.classList.add('good'); win(T(s)+'!', b); later(round, 2000); }
+        else miss(b, lang==='en' ? `That is a ${s.en}. ` : `हा ${s.mr}. `);
+      };
+      row.appendChild(b);
+    });
+  }
+  round();
+}
+
+function countGame(stage){
+  function round(){
+    let busy = false, counted = 0;
+    const n = 1 + Math.floor(Math.random()*5), it = pick(ITEMS);
+    setPrompt(lang==='en' ? `How many ${it.en}?` : `किती ${it.mr}?`);
+    stage.innerHTML = '<div class="tray"></div><div class="row nums"></div>';
+    const tray = stage.querySelector('.tray'), nums = stage.querySelector('.nums');
+    for (let i=0;i<n;i++){
+      const s = btn('item', it.e, T(it));
+      s.onclick = () => { if (s.dataset.c) return; counted++; s.dataset.c = fmtNum(counted); s.classList.add('counted'); sfx.tick(counted); say(numWord(counted)); };
+      tray.appendChild(s);
+    }
+    const opts = new Set([n]); while (opts.size < 3) opts.add(1 + Math.floor(Math.random()*5));
+    shuffle([...opts]).forEach(v => {
+      const b = btn('num', fmtNum(v), numWord(v));
+      b.onclick = () => {
+        if (busy) return;
+        if (v === n){ busy = true; b.classList.add('good'); win(numWord(n)+'!', b); later(round, 2100); }
+        else miss(b, '');
+      };
+      nums.appendChild(b);
+    });
+  }
+  round();
+}
+
+function animalsGame(stage){
+  setPrompt(T(UI.animalsPrompt));
+  stage.innerHTML = '<div class="zoo"></div>';
+  const zoo = stage.firstChild;
+  ANIMALS.forEach(a => {
+    const b = btn('animal', `<span class="e">${a.e}</span><span class="n">${T(a.name)}</span>`, T(a.name));
+    b.onclick = () => {
+      b.classList.remove('hop'); void b.offsetWidth; b.classList.add('hop');
+      sfx.ding(); say(`${T(a.name)}. ${T(a.sound)}`);
+      $('#promptText').textContent = `${T(a.name)}: ${T(a.sound)}`;
+    };
+    zoo.appendChild(b);
+  });
+}
+
+function bubblesGame(stage){
+  setPrompt(T(UI.bubblesPrompt));
+  stage.innerHTML = '<div class="pond"><div class="popcount">'+fmtNum(0)+'</div></div>';
+  const pond = stage.firstChild, cnt = pond.firstChild;
+  const tints = ['rgba(242,102,172,.5)','rgba(135,87,238,.45)','rgba(47,174,100,.45)','rgba(255,194,52,.55)','rgba(239,83,61,.4)','rgba(255,255,255,.35)'];
+  let popped = 0;
+  const setH = () => pond.style.setProperty('--h', (pond.clientHeight + 300) + 'px');
+  setH(); window.addEventListener('resize', setH);
+  cleanup = () => window.removeEventListener('resize', setH);
+  function pop(e){
+    const b = e.currentTarget; if (b.classList.contains('popped')) return;
+    e.preventDefault();
+    b.classList.add('popped'); sfx.pop(); popped++;
+    cnt.textContent = fmtNum(popped);
+    if (popped % 10 === 0){ addStar(); confetti(b); sfx.chime(); say(numWord(Math.min(popped,20)) + '! ' + pick(PRAISE[lang])); }
+    else if (popped <= 20) say(numWord(popped));
+    setTimeout(() => b.remove(), 300);
+  }
+  function spawn(){
+    if (pond.querySelectorAll('.bubble:not(.popped)').length < 9){
+      const size = 64 + Math.random()*60, w = pond.clientWidth;
+      const b = btn('bubble', '<span class="skin"></span>', lang==='en'?'bubble':'बुडबुडा');
+      b.style.width = b.style.height = size+'px';
+      b.style.left = Math.max(0, Math.random()*(w-size)) + 'px';
+      b.style.setProperty('--dur', (6 + Math.random()*5)+'s');
+      b.style.setProperty('--drift', (Math.random()*80-40)+'px');
+      b.style.setProperty('--tint', pick(tints));
+      b.addEventListener('pointerdown', pop);
+      b.addEventListener('animationend', e => { if (e.animationName==='rise') b.remove(); });
+      pond.appendChild(b);
+    }
+    later(spawn, 700);
+  }
+  spawn();
+}
+
+function pairsGame(stage){
+  let size = 3;
+  function round(){
+    setPrompt(T(UI.pairsPrompt));
+    const picks = shuffle(ANIMALS).slice(0,size), deck = shuffle([...picks, ...picks]);
+    stage.innerHTML = `<div class="board" style="--cols:${size===3?3:4}"></div>`;
+    const board = stage.firstChild;
+    let open = [], found = 0, lock = false;
+    deck.forEach(a => {
+      const c = btn('card', `<span class="inner"><span class="face back"></span><span class="face front">${a.e}</span></span>`, lang==='en'?'card':'पत्ता');
+      c.onclick = () => {
+        if (lock || c.classList.contains('up')) return;
+        c.classList.add('up'); sfx.flip(); say(T(a.name));
+        open.push({c,a});
+        if (open.length < 2) return;
+        lock = true;
+        const [x,y] = open;
+        if (x.a === y.a){
+          later(() => {
+            x.c.classList.add('matched'); y.c.classList.add('matched'); sfx.ding();
+            found++; open = []; lock = false;
+            if (found === size){
+              later(() => {
+                win(T(UI.pairsDone), board);
+                size = Math.min(size+1, 4);
+                later(round, 2800);
+              }, 500);
+            }
+          }, 450);
+        } else {
+          later(() => { x.c.classList.remove('up'); y.c.classList.remove('up'); open = []; lock = false; }, 1100);
+        }
+      };
+      board.appendChild(c);
+    });
+  }
+  round();
+}
+
+/* ---------- menu ---------- */
+const GAMES = [
+  {id:'colors', c:'var(--tomato)', icon:()=>'<span class="ic">🎈</span>', run:colorsGame},
+  {id:'shapes', c:'var(--sun)', icon:()=>'<span class="ic"><svg viewBox="0 0 120 50"><circle cx="20" cy="27" r="17" fill="#EF533D" stroke="#1F2B45" stroke-width="3.5"/><polygon points="60,8 80,44 40,44" fill="#3597E6" stroke="#1F2B45" stroke-width="3.5" stroke-linejoin="round"/><rect x="86" y="11" width="31" height="31" rx="3" fill="#2FAE64" stroke="#1F2B45" stroke-width="3.5"/></svg></span>', run:shapesGame},
+  {id:'count', c:'var(--leaf)', icon:()=>`<span class="ic num">${fmtNum(123)}</span>`, run:countGame},
+  {id:'animals', c:'var(--orange)', icon:()=>'<span class="ic">🐮</span>', run:animalsGame},
+  {id:'bubbles', c:'var(--sky)', icon:()=>'<span class="ic"><svg viewBox="0 0 80 60"><circle cx="28" cy="34" r="22" fill="rgba(255,255,255,.55)" stroke="#1F2B45" stroke-width="3"/><circle cx="62" cy="18" r="14" fill="rgba(255,255,255,.55)" stroke="#1F2B45" stroke-width="3"/><circle cx="20" cy="26" r="5" fill="#fff"/><circle cx="57" cy="13" r="3.5" fill="#fff"/></svg></span>', run:bubblesGame},
+  {id:'pairs', c:'var(--pink)', icon:()=>'<span class="ic duo">🐱🐱</span>', run:pairsGame}
+];
+
+function renderHome(){
+  $('#hello').textContent = T(UI.hello);
+  $('#grownups').innerHTML = T(UI.grownups);
+  const tiles = $('#tiles'); tiles.innerHTML = '';
+  GAMES.forEach(g => {
+    const b = btn('tile', g.icon() + `<span class="lb">${T(UI[g.id])}</span>`, T(UI[g.id]));
+    b.style.setProperty('--c', g.c);
+    b.onclick = () => openGame(g.id);
+    tiles.appendChild(b);
+  });
+}
+function openGame(id){
+  stopGame(); actx();
+  current = id;
+  const g = GAMES.find(g => g.id===id);
+  $('#home').hidden = true; $('#game').hidden = false; $('#homeBtn').hidden = false;
+  $('#brand').textContent = T(UI[id]);
+  const stage = $('#stage'); stage.innerHTML = '';
+  g.run(stage);
+}
+function goHome(){
+  stopGame(); current = null;
+  $('#game').hidden = true; $('#home').hidden = false; $('#homeBtn').hidden = true;
+  $('#brand').textContent = T(UI.appName);
+  renderHome();
+}
+function setLang(l){
+  lang = l; store.set('lang', l);
+  document.documentElement.lang = l==='mr' ? 'mr' : 'en';
+  $('#langEn').setAttribute('aria-pressed', l==='en'); $('#langMr').setAttribute('aria-pressed', l==='mr');
+  $('#starCount').textContent = fmtNum(stars);
+  $('#homeBtn').setAttribute('aria-label', l==='en'?'Home':'मुख्य पान');
+  $('#hearBtn').setAttribute('aria-label', l==='en'?'Hear it again':'पुन्हा ऐका');
+  if (current) openGame(current); else goHome();
+}
+
+$('#homeBtn').onclick = goHome;
+$('#hearBtn').onclick = () => say($('#promptText').textContent || lastPrompt);
+$('#langEn').onclick = () => setLang('en');
+$('#langMr').onclick = () => setLang('mr');
+window.addEventListener('resize', () => { if (raf) sizeCanvas(); });
+try{ navigator.wakeLock && navigator.wakeLock.request('screen').catch(()=>{}); }catch(e){}
+
+setLang(lang);
+})();
+</script>
+</body></html>
